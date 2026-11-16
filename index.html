@@ -39,16 +39,13 @@
             <div class="panel-heading"><div><span class="section-index">A</span><span class="panel-title">原图</span></div><button id="removeImage" class="icon-button hidden" title="移除图片" aria-label="移除图片">×</button></div>
             <div id="dropzone" class="dropzone">
               <input id="fileInput" type="file" accept="image/*" hidden>
+              <input id="cameraFileInput" type="file" accept="image/*" capture="environment" hidden>
               <div id="emptyState" class="empty-state">
                 <div class="upload-icon"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 31V8m0 0-8 8m8-8 8 8M10 28v11h28V28"/></svg></div>
                 <div class="drop-title">把图片拖到这里</div>
                 <div class="drop-hint">拖放图片，或选择一种上传方式</div>
                 <div class="upload-actions"><button id="browseButton" class="upload-choice" type="button"><span>↥</span> 选择图片</button><button id="openCameraButton" class="upload-choice camera-choice" type="button"><span>◉</span> 拍照上传</button></div>
                 <div class="file-limit">支持 JPG、PNG、WEBP、BMP，最大 20 MB</div>
-              </div>
-              <div id="cameraStage" class="camera-stage hidden">
-                <video id="cameraVideo" autoplay playsinline muted></video>
-                <div class="camera-actions"><button id="cancelCameraButton" class="camera-cancel" type="button">取消</button><button id="captureButton" class="capture-button" type="button"><span></span> 拍摄</button></div>
               </div>
               <div id="previewWrap" class="preview-wrap hidden"><img id="previewImage" alt="待识别图片"><div id="boxLayer" class="box-layer"></div></div>
               <div id="dropOverlay" class="drop-overlay hidden"><span>松开鼠标以添加图片</span></div>
@@ -101,6 +98,19 @@
 
       <footer class="page-footer"><span>让散落在图片里的字，重新变得好用。</span><span>SHITU OCR <span class="footer-year">2026</span></span></footer>
     </main>
+    <div id="cameraDialog" class="camera-dialog hidden" role="dialog" aria-modal="true" aria-label="拍照上传">
+      <div class="camera-dialog-card">
+        <div class="camera-dialog-head"><span>拍照上传</span><button id="closeCameraButton" class="camera-close" type="button" aria-label="关闭拍照">×</button></div>
+        <div class="camera-view"><video id="cameraVideo" autoplay playsinline muted></video><img id="cameraCaptured" class="hidden" alt="刚拍摄的照片预览"></div>
+        <div class="camera-dialog-hint" id="cameraHint">拍好后可先确认照片，再添加到识别页面。</div>
+        <div class="camera-actions">
+          <button id="cancelCameraButton" class="camera-action camera-cancel" type="button">取消</button>
+          <button id="retakeButton" class="camera-action camera-retake hidden" type="button">重拍</button>
+          <button id="captureButton" class="camera-action capture-button" type="button"><span></span> 拍摄</button>
+          <button id="usePhotoButton" class="camera-action use-photo hidden" type="button">使用照片</button>
+        </div>
+      </div>
+    </div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <div id="vaultDialog" class="vault-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="vaultDialogTitle">
       <div class="vault-dialog-card"><button id="vaultDialogClose" class="vault-dialog-close" type="button" aria-label="关闭">×</button><div class="vault-lock-icon">⌑</div><h2 id="vaultDialogTitle">锁定 API Key</h2><p id="vaultDialogDescription">设置一个解锁密码。API Key 将使用此密码加密保存在本机。</p><label class="vault-password-field"><span id="vaultPasswordLabel">解锁密码</span><input id="vaultPassword" type="password" autocomplete="new-password"></label><label id="vaultConfirmWrap" class="vault-password-field hidden"><span>确认密码</span><input id="vaultPasswordConfirm" type="password" autocomplete="new-password"></label><div id="vaultDialogError" class="vault-dialog-error hidden"></div><button id="vaultDialogSubmit" class="primary-button vault-submit" type="button">继续</button></div>
@@ -108,3 +118,4 @@
   </div>
 </body>
 </html>
+

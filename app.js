@@ -1,11 +1,14 @@
 const $ = (id) => document.getElementById(id);
 const fileInput = $('fileInput');
+const cameraFileInput = $('cameraFileInput');
 const dropzone = $('dropzone');
 const image = $('previewImage');
 let currentFile = null;
 let worker = null;
 let toastTimer;
 let cameraStream = null;
+let capturedPhoto = null;
+let cameraPreviewUrl = null;
 const DEFAULT_PROMPT = '请逐字转录图片中所有清晰可见的印刷文字。严格遵守：1. 保持原文语言，不要翻译、解释、总结或回答题目；2. 按原图从上到下、从左到右的阅读顺序输出，保留题号、选项编号、段落和换行；3. 保留括号、下划线、标点、数字及选项之间的空格；4. 不要补全被遮挡或无法确认的内容，不要猜测；5. 忽略手写涂改和纸张背面的透印。只返回转录文本，不要添加说明。';
 const apiFields = ['apiEndpoint','apiModel','apiPrompt'];
 const savedApi = (() => { try { return JSON.parse(localStorage.getItem('shizi-api-settings') || sessionStorage.getItem('shizi-api-settings') || '{}'); } catch { return {}; } })();
@@ -147,34 +150,68 @@ function useFile(file) {
 }
 $('browseButton').addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', e => { useFile(e.target.files[0]); e.target.value = ''; });
+cameraFileInput.addEventListener('change', e => { useFile(e.target.files[0]); e.target.value = ''; });
 function stopCamera() {
   if (cameraStream) { cameraStream.getTracks().forEach(track=>track.stop()); cameraStream=null; }
   $('cameraVideo').srcObject=null;
 }
+function resetCameraDialog() {
+  stopCamera();
+  capturedPhoto=null;
+  if (cameraPreviewUrl) { URL.revokeObjectURL(cameraPreviewUrl); cameraPreviewUrl=null; }
+  $('cameraCaptured').removeAttribute('src');
+  $('cameraCaptured').classList.add('hidden'); $('cameraVideo').classList.remove('hidden');
+  $('captureButton').classList.remove('hidden'); $('cancelCameraButton').classList.remove('hidden');
+  $('retakeButton').classList.add('hidden'); $('usePhotoButton').classList.add('hidden');
+  $('cameraHint').textContent='拍好后可先确认照片，再添加到识别页面。';
+  $('cameraDialog').classList.add('hidden');
+}
+function openNativeCamera() {
+  resetCameraDialog();
+  cameraFileInput.click();
+}
 async function openCamera() {
-  if (!navigator.mediaDevices?.getUserMedia) { toast('当前打开方式无法使用摄像头，请通过 HTTPS 或 localhost 打开网页'); return; }
+  if (!navigator.mediaDevices?.getUserMedia) { openNativeCamera(); return; }
   try {
     cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
     $('cameraVideo').srcObject=cameraStream;
-    $('emptyState').classList.add('hidden'); $('cameraStage').classList.remove('hidden');
+    $('cameraDialog').classList.remove('hidden');
     await $('cameraVideo').play();
   } catch(error) {
-    stopCamera(); $('cameraStage').classList.add('hidden'); $('emptyState').classList.remove('hidden');
-    const message=error.name==='NotAllowedError'?'摄像头权限未开启，请在 Edge 地址栏左侧的站点权限中允许摄像头。':error.name==='NotFoundError'?'没有检测到可用摄像头。':'无法启动摄像头，请确认摄像头未被其他应用占用。';
-    toast(message);
+    resetCameraDialog();
+    toast(error.name==='NotAllowedError'?'网页摄像头不可用，已切换到系统拍照/选图。':'无法启动网页摄像头，已切换到系统拍照/选图。');
+    openNativeCamera();
   }
 }
 $('openCameraButton').addEventListener('click',openCamera);
-$('cancelCameraButton').addEventListener('click',()=>{stopCamera();$('cameraStage').classList.add('hidden');$('emptyState').classList.remove('hidden');});
+$('cancelCameraButton').addEventListener('click',resetCameraDialog);
+$('closeCameraButton').addEventListener('click',resetCameraDialog);
+$('cameraDialog').addEventListener('click',e=>{if(e.target===$('cameraDialog'))resetCameraDialog();});
+$('retakeButton').addEventListener('click',async()=>{
+  $('cameraCaptured').removeAttribute('src'); if(cameraPreviewUrl){URL.revokeObjectURL(cameraPreviewUrl);cameraPreviewUrl=null;} capturedPhoto=null;
+  $('cameraCaptured').classList.add('hidden'); $('cameraVideo').classList.remove('hidden');
+  $('retakeButton').classList.add('hidden'); $('usePhotoButton').classList.add('hidden'); $('captureButton').classList.remove('hidden'); $('cancelCameraButton').classList.remove('hidden');
+  $('cameraHint').textContent='拍好后可先确认照片，再添加到识别页面。';
+  try { cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); $('cameraVideo').srcObject=cameraStream; await $('cameraVideo').play(); }
+  catch { resetCameraDialog(); toast('无法重新打开摄像头，请再试一次拍照上传。'); }
+});
+$('usePhotoButton').addEventListener('click',()=>{const photo=capturedPhoto;resetCameraDialog();if(photo)useFile(photo);});
 $('captureButton').addEventListener('click',()=>{
   const video=$('cameraVideo'); if(!video.videoWidth||!video.videoHeight){toast('摄像头画面还未准备好，请稍等一下');return;}
   const canvas=document.createElement('canvas');canvas.width=video.videoWidth;canvas.height=video.videoHeight;
   canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
-  canvas.toBlob(blob=>{if(!blob){toast('拍摄失败，请重试');return;}const photo=new File([blob],`shizi-camera-${Date.now()}.jpg`,{type:'image/jpeg'});stopCamera();$('cameraStage').classList.add('hidden');useFile(photo);},'image/jpeg',.92);
+  canvas.toBlob(blob=>{
+    if(!blob){toast('拍摄失败，请重试');return;}
+    capturedPhoto=new File([blob],`shitu-camera-${Date.now()}.jpg`,{type:'image/jpeg'});
+    cameraPreviewUrl=URL.createObjectURL(capturedPhoto); $('cameraCaptured').src=cameraPreviewUrl; $('cameraCaptured').classList.remove('hidden'); $('cameraVideo').classList.add('hidden');
+    stopCamera(); $('captureButton').classList.add('hidden'); $('cancelCameraButton').classList.add('hidden');
+    $('retakeButton').classList.remove('hidden'); $('usePhotoButton').classList.remove('hidden'); $('cameraHint').textContent='确认这张照片后再添加，或选择重拍。';
+  },'image/jpeg',.92);
 });
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('cameraDialog').classList.contains('hidden'))resetCameraDialog();});
 window.addEventListener('pagehide',stopCamera);
 $('removeImage').addEventListener('click', () => {
-  stopCamera(); $('cameraStage').classList.add('hidden');
+  resetCameraDialog();
   currentFile = null; image.removeAttribute('src'); $('previewWrap').classList.add('hidden'); $('emptyState').classList.remove('hidden');
   $('imageMeta').classList.add('hidden'); $('removeImage').classList.add('hidden'); $('recognizeButton').disabled = true;
   $('boxLayer').replaceChildren(); $('resultPlaceholder').classList.remove('hidden'); $('resultText').classList.add('hidden');
@@ -330,3 +367,4 @@ $('downloadButton').addEventListener('click', () => {
   const blob = new Blob([$('resultText').value], {type:'text/plain;charset=utf-8'}); const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = `${currentFile?.name.replace(/\.[^.]+$/,'') || 'shitu-ocr'}.txt`; a.click(); URL.revokeObjectURL(a.href);
 });
+

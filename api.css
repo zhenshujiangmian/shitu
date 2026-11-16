@@ -54,10 +54,20 @@
 .upload-choice:hover{border-color:#b8c97a;background:#fbfcf6;transform:translateY(-1px)}
 .upload-choice>span{color:#839a37;font-size:13px}
 .camera-choice{background:#f7f9ef;border-color:#e1e7d0;color:#63752c}
-.camera-stage{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px}
-.camera-stage video{display:block;flex:1;min-height:0;max-height:240px;width:100%;object-fit:contain;background:#20211d;border-radius:5px}
-.camera-actions{width:100%;display:flex;align-items:center;justify-content:space-between;max-width:460px}
-.camera-cancel{border:0;background:transparent;color:#85867d;font:10px var(--sans);padding:8px;cursor:pointer}
-.capture-button{display:flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid #dfe8c5;border-radius:20px;background:#f7faed;color:#556823;font:10px var(--sans);cursor:pointer}
+.camera-dialog{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding: max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));background:#151610ed}
+.camera-dialog-card{width:min(100%,620px);height:min(100%,760px);height:min(calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)),760px);min-height:0;display:flex;flex-direction:column;overflow:hidden;border:1px solid #ffffff24;border-radius:14px;background:#fff;box-shadow:0 18px 60px #0005}
+.camera-dialog-head{height:52px;flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid #ecece6;font-size:13px;font-weight:600}
+.camera-close{width:34px;height:34px;border:0;border-radius:50%;background:#f4f4ef;color:#6d6e65;font-size:25px;line-height:1;cursor:pointer}
+.camera-view{flex:1;min-height:120px;display:grid;place-items:center;overflow:hidden;background:#181916}
+.camera-view video,.camera-view img{display:block;width:100%;height:100%;object-fit:contain}
+.camera-dialog-hint{flex:0 0 auto;padding:12px 16px 4px;text-align:center;color:#818278;font-size:11px;line-height:1.5}
+.camera-actions{flex:0 0 auto;min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 16px max(12px,env(safe-area-inset-bottom));}
+.camera-action{min-width:90px;min-height:42px;border:1px solid #e3e4dc;border-radius:8px;background:white;color:#66675e;font:12px var(--sans);cursor:pointer;touch-action:manipulation}
+.camera-cancel{border:0;background:transparent;color:#74756c}
+.capture-button{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #dfe8c5;border-radius:24px;background:#f7faed;color:#556823;font-weight:600}
 .capture-button span{width:12px;height:12px;border:2px solid #819a35;border-radius:50%;box-shadow:inset 0 0 0 2px #f7faed;background:#a6bf49}
+.use-photo{border-color:#22221f;background:#22221f;color:#fff;font-weight:600}
+.camera-retake{margin-left:auto}
+@media(max-width:600px){.camera-dialog{padding:0;background:#111}.camera-dialog-card{width:100%;height:100%;height:100dvh;max-height:none;border:0;border-radius:0}.camera-dialog-head{height:56px;padding-left:18px;padding-right:12px}.camera-view{min-height:0}.camera-actions{min-height:82px;padding-left:18px;padding-right:18px;padding-bottom:max(16px,env(safe-area-inset-bottom))}.camera-action{min-width:104px;min-height:46px;font-size:13px}.camera-dialog-hint{padding:14px 16px 6px;font-size:12px}}
 @media(max-width:420px){.api-settings{padding:10px}.api-fields{grid-template-columns:1fr}.api-field-wide{grid-column:auto}.api-settings-head{align-items:flex-start;gap:8px;flex-direction:column}.api-settings-note{display:block;margin:4px 0 0}.vault-actions{align-items:flex-start;flex-direction:column}.vault-actions>div{width:100%;justify-content:flex-start}.actions{flex-wrap:wrap}.explain-button{order:-1}}
+
