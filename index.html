@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f4f0">
+  <title>拾图 · 图片文字提取</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="api.css">
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="拾图首页"><span class="brand-mark">拾</span><span>拾图<span class="brand-dot">.</span></span></a>
+      <div class="top-note"><span class="privacy-dot"></span> 本地识别留在设备 · AI 模式发往所选 API</div>
+      <a class="github-link" href="https://github.com/hex3l/webocr" target="_blank" rel="noreferrer">灵感来自开源项目 <span>↗</span></a>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div class="eyebrow"><span class="eyebrow-line"></span> IMAGE TO TEXT · OCR</div>
+        <h1>把图片里的文字，<br><em>原样拾起来。</em></h1>
+        <p>拖入图片，提取中、日、英文内容。按原有阅读顺序整理文字，也能在图片上查看每一处识别位置。</p>
+      </section>
+
+      <section class="workspace" aria-label="图片文字提取工作区">
+        <div class="toolbar">
+          <div class="toolbar-left"><span class="step-number">01</span><span class="toolbar-title">添加图片</span><span class="toolbar-separator">/</span><span class="toolbar-subtitle">PNG · JPG · WEBP · BMP</span></div>
+          <div class="toolbar-right"><span id="engineTag" class="engine-tag"><span class="engine-dot"></span> 本地 OCR</span></div>
+        </div>
+
+        <div class="columns">
+          <section class="panel image-panel" aria-label="图片预览">
+            <div class="panel-heading"><div><span class="section-index">A</span><span class="panel-title">原图</span></div><button id="removeImage" class="icon-button hidden" title="移除图片" aria-label="移除图片">×</button></div>
+            <div id="dropzone" class="dropzone">
+              <input id="fileInput" type="file" accept="image/*" hidden>
+              <div id="emptyState" class="empty-state">
+                <div class="upload-icon"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 31V8m0 0-8 8m8-8 8 8M10 28v11h28V28"/></svg></div>
+                <div class="drop-title">把图片拖到这里</div>
+                <div class="drop-hint">拖放图片，或选择一种上传方式</div>
+                <div class="upload-actions"><button id="browseButton" class="upload-choice" type="button"><span>↥</span> 选择图片</button><button id="openCameraButton" class="upload-choice camera-choice" type="button"><span>◉</span> 拍照上传</button></div>
+                <div class="file-limit">支持 JPG、PNG、WEBP、BMP，最大 20 MB</div>
+              </div>
+              <div id="cameraStage" class="camera-stage hidden">
+                <video id="cameraVideo" autoplay playsinline muted></video>
+                <div class="camera-actions"><button id="cancelCameraButton" class="camera-cancel" type="button">取消</button><button id="captureButton" class="capture-button" type="button"><span></span> 拍摄</button></div>
+              </div>
+              <div id="previewWrap" class="preview-wrap hidden"><img id="previewImage" alt="待识别图片"><div id="boxLayer" class="box-layer"></div></div>
+              <div id="dropOverlay" class="drop-overlay hidden"><span>松开鼠标以添加图片</span></div>
+            </div>
+            <div id="imageMeta" class="image-meta hidden"><span id="fileName">—</span><span id="imageDimensions">—</span></div>
+            <div id="imagePrivacyNote" class="image-footer"><span class="footer-lock">▣</span> 本地 OCR：图片不会离开你的设备</div>
+          </section>
+
+          <section class="panel result-panel" aria-label="识别结果">
+            <div class="panel-heading"><div><span class="section-index">B</span><span class="panel-title">识别结果</span></div><span id="wordCount" class="word-count">等待图片</span></div>
+            <div class="settings-row">
+              <label id="modeLabel" class="language-label" for="engineSelect">识别方式</label>
+              <select id="engineSelect" aria-label="识别方式"><option value="local">本地 OCR</option><option value="ai">自定义 AI API</option></select>
+              <span id="languageControls" class="language-controls">
+              <label class="language-label" for="languageSelect">语言</label>
+              <select id="languageSelect" aria-label="识别语言">
+                <option value="chi_sim+jpn+eng">中文 + 日本語 + English</option>
+                <option value="chi_sim+eng">中文 + English</option>
+                <option value="jpn+eng">日本語 + English</option>
+                <option value="chi_sim">简体中文</option>
+                <option value="jpn">日本語</option>
+                <option value="eng">English</option>
+              </select>
+              </span>
+              <button id="layoutToggle" class="layout-toggle active" aria-pressed="true"><span class="toggle-check">✓</span>显示文字位置</button>
+              <button id="apiPanelToggle" class="api-panel-toggle hidden" type="button" aria-expanded="false">API 设置</button>
+            </div>
+            <div id="apiSettings" class="api-settings hidden">
+              <div class="api-settings-head"><div><span class="api-settings-title">视觉 AI 接口</span><span class="api-settings-note">兼容 OpenAI Chat Completions</span></div><span id="vaultStatus" class="api-session-badge">API Key 加密保存在本机</span></div>
+              <div class="api-fields">
+                <label class="api-field api-field-wide"><span>API 地址</span><input id="apiEndpoint" type="url" placeholder="https://api.example.com/v1/chat/completions" autocomplete="url"></label>
+                <label class="api-field"><span>模型名称</span><input id="apiModel" type="text" placeholder="例如：支持图片输入的模型" autocomplete="off"></label>
+                <label class="api-field"><span>API Key</span><input id="apiKey" type="password" placeholder="sk-…" autocomplete="new-password"></label>
+                <label class="api-field api-field-wide"><span>识别提示词</span><textarea id="apiPrompt" rows="3" spellcheck="false"></textarea></label>
+              </div>
+              <div class="vault-actions"><span id="vaultHint">可用密码加密保存 API Key，之后解锁即可使用。</span><div><button id="vaultSaveButton" class="vault-button" type="button">加密保存 Key</button><button id="vaultUnlockButton" class="vault-button hidden" type="button">解锁 Key</button><button id="vaultLockButton" class="vault-button hidden" type="button">立即锁定</button><button id="vaultDeleteButton" class="vault-delete-button hidden" type="button">删除本机密钥</button></div></div>
+              <div class="api-disclosure">使用 AI 识别时，原图会发送到上述 API 服务。请确认服务商支持图片输入，并检查其数据处理政策。</div>
+            </div>
+            <div class="result-body">
+              <div id="resultPlaceholder" class="result-placeholder"><div class="placeholder-mark">Aa<br>文</div><div class="placeholder-title">识别结果会出现在这里</div><div class="placeholder-desc">添加图片后开始提取文字</div></div>
+              <textarea id="resultText" class="result-text hidden" placeholder="识别出的文字可在这里编辑…" spellcheck="false" aria-label="可编辑识别结果"></textarea>
+              <div id="progressArea" class="progress-area hidden"><div class="progress-copy"><span id="statusText">正在准备识别…</span><span id="progressPercent">0%</span></div><div class="progress-track"><div id="progressBar" class="progress-bar"></div></div><div id="downloadNote" class="download-note">首次识别时需要下载语言模型，请保持网络连接。</div></div>
+            </div>
+            <div id="explanationPanel" class="explanation-panel hidden"><div class="explanation-head"><div class="explanation-title"><span class="explanation-spark">✦</span><span>划词解析</span></div><button id="closeExplanation" type="button" aria-label="关闭解析">×</button></div><div id="explanationSource" class="explanation-source"></div><div id="explanationText" class="explanation-text"></div></div>
+            <div class="result-footer"><div id="resultStatus" class="result-status"><span class="status-indicator"></span><span>准备就绪</span></div><div class="actions"><button id="explainButton" class="secondary-button explain-button" disabled title="先拖动鼠标选中识别结果中的词句"><span>✦</span> 翻译 / 解析</button><button id="copyButton" class="secondary-button" disabled><span>▢</span> 复制</button><button id="downloadButton" class="secondary-button" disabled><span>↓</span> 导出 TXT</button><button id="recognizeButton" class="primary-button" disabled>开始识别 <span>↗</span></button></div></div>
+          </section>
+        </div>
+        <div class="workspace-foot"><span>支持文字框定位与阅读顺序整理</span><span class="mono">PRIVATE BY DESIGN <span class="tiny-star">✳</span></span></div>
+      </section>
+
+      <footer class="page-footer"><span>让散落在图片里的字，重新变得好用。</span><span>SHITU OCR <span class="footer-year">2026</span></span></footer>
+    </main>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="vaultDialog" class="vault-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="vaultDialogTitle">
+      <div class="vault-dialog-card"><button id="vaultDialogClose" class="vault-dialog-close" type="button" aria-label="关闭">×</button><div class="vault-lock-icon">⌑</div><h2 id="vaultDialogTitle">锁定 API Key</h2><p id="vaultDialogDescription">设置一个解锁密码。API Key 将使用此密码加密保存在本机。</p><label class="vault-password-field"><span id="vaultPasswordLabel">解锁密码</span><input id="vaultPassword" type="password" autocomplete="new-password"></label><label id="vaultConfirmWrap" class="vault-password-field hidden"><span>确认密码</span><input id="vaultPasswordConfirm" type="password" autocomplete="new-password"></label><div id="vaultDialogError" class="vault-dialog-error hidden"></div><button id="vaultDialogSubmit" class="primary-button vault-submit" type="button">继续</button></div>
+    </div>
+  </div>
+</body>
+</html>
