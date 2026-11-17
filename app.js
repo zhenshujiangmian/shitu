@@ -420,6 +420,7 @@ $('recognizeButton').addEventListener('click', async () => {
     if(/[\u3040-\u30ff]/.test($('resultText').value)){$('furiganaButton').classList.remove('hidden');$('furiganaButton').innerHTML='<span>あ</span> 日语注音';}
     $('copyButton').disabled = !$('resultText').value; $('downloadButton').disabled = !$('resultText').value;
     setStatus('识别完成', 'done'); if (!$('resultText').value) toast('没有识别到文字，请检查图片或 API 设置');
+    if(aiMode&&/[\u3040-\u30ff]/.test($('resultText').value))await createFurigana();
   } catch (error) {
     console.error(error); $('progressArea').classList.add('hidden'); $('resultText').classList.remove('hidden'); $('rubyResult').classList.add('hidden'); $('furiganaButton').classList.add('hidden'); $('resultText').value = ''; $('resultPlaceholder').classList.add('hidden'); setStatus('识别失败'); toast(error.message || '识别失败，请检查网络、API 地址和跨域权限');
   } finally { $('recognizeButton').disabled = false; }
