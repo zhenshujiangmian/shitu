@@ -2,4 +2,6 @@
 .ruby-result{width:100%;height:100%;overflow:auto;padding:17px 4px;outline:0;background:transparent;font:12px/2.5 var(--sans);color:#34342f;white-space:pre-wrap;overflow-wrap:anywhere;user-select:text}
 .ruby-result ruby{ruby-position:over}
 .ruby-result rt{color:#738b2d;font-size:.62em;font-weight:600;line-height:1;user-select:none}
+@media(min-width:761px){.columns{grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);min-height:600px}.dropzone{height:280px}.preview-wrap img{max-height:278px}.result-body{height:clamp(440px,60vh,700px)}}
+@media(max-width:760px){.result-body{height:clamp(300px,48vh,460px)}}
 
