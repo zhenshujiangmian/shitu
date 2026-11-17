@@ -143,7 +143,7 @@ function useFile(file) {
     $('imageMeta').classList.remove('hidden'); $('removeImage').classList.remove('hidden');
     $('fileName').textContent = file.name; $('imageDimensions').textContent = `${image.naturalWidth} × ${image.naturalHeight}`;
     $('recognizeButton').disabled = false; $('resultPlaceholder').classList.remove('hidden'); $('resultText').classList.add('hidden');
-    $('resultText').value = ''; $('rubyResult').classList.add('hidden'); $('furiganaButton').classList.add('hidden'); furiganaSegments=null; furiganaVisible=false; $('copyButton').disabled = true; $('downloadButton').disabled = true;
+    $('resultText').value = ''; $('rubyResult').classList.add('hidden'); $('furiganaButton').classList.add('hidden'); $('furiganaExportButton').classList.add('hidden'); furiganaSegments=null; furiganaVisible=false; $('copyButton').disabled = true; $('downloadButton').disabled = true;
     selectedSnippet=''; $('explainButton').disabled=true; $('explanationPanel').classList.add('hidden');
     $('wordCount').textContent = '等待识别'; $('boxLayer').replaceChildren(); setStatus('图片已添加');
   };
@@ -214,7 +214,7 @@ $('removeImage').addEventListener('click', () => {
   resetCameraDialog();
   currentFile = null; image.removeAttribute('src'); $('previewWrap').classList.add('hidden'); $('emptyState').classList.remove('hidden');
   $('imageMeta').classList.add('hidden'); $('removeImage').classList.add('hidden'); $('recognizeButton').disabled = true;
-  $('boxLayer').replaceChildren(); $('resultPlaceholder').classList.remove('hidden'); $('resultText').classList.add('hidden'); $('rubyResult').classList.add('hidden'); $('furiganaButton').classList.add('hidden'); furiganaSegments=null; furiganaVisible=false;
+  $('boxLayer').replaceChildren(); $('resultPlaceholder').classList.remove('hidden'); $('resultText').classList.add('hidden'); $('rubyResult').classList.add('hidden'); $('furiganaButton').classList.add('hidden'); $('furiganaExportButton').classList.add('hidden'); furiganaSegments=null; furiganaVisible=false;
   $('resultText').value = ''; $('copyButton').disabled = true; $('downloadButton').disabled = true; $('wordCount').textContent = '等待图片'; setStatus('准备就绪');
   selectedSnippet=''; $('explainButton').disabled=true; $('explanationPanel').classList.add('hidden');
 });
@@ -301,7 +301,7 @@ async function createFurigana() {
     const parsed=JSON.parse(raw);const segments=Array.isArray(parsed)?parsed:parsed.segments;
     const valid=Array.isArray(segments)&&segments.length>0&&segments.every(s=>typeof s.text==='string'&&typeof s.reading==='string'&&/^[\u3041-\u3096\u309D-\u309Fー]*$/.test(s.reading))&&segments.map(s=>s.text).join('')===source;
     if(!valid)throw new Error('注音结果与原文未能逐字对应，请重试或检查模型输出格式。');
-    furiganaSegments=segments;renderFurigana(segments);setFuriganaView(true);setStatus('日语注音已生成','done');
+    furiganaSegments=segments;renderFurigana(segments);$('furiganaExportButton').classList.remove('hidden');setFuriganaView(true);setStatus('日语注音已生成','done');
   }catch(error){setStatus('注音生成失败');toast(error.message||'生成注音失败，请检查 API 设置。');}
   finally{button.disabled=false;if(!furiganaSegments)button.innerHTML='<span>あ</span> 日语注音';}
 }
@@ -340,10 +340,16 @@ function readRubySelection(){
 for (const event of ['mouseup','keyup','select']) $('resultText').addEventListener(event,readTextSelection);
 $('rubyResult').addEventListener('mouseup',readRubySelection);$('rubyResult').addEventListener('keyup',readRubySelection);
 $('resultText').addEventListener('input',()=>{
-  if(furiganaSegments){furiganaSegments=null;$('rubyResult').classList.add('hidden');furiganaVisible=false;$('furiganaButton').innerHTML='<span>あ</span> 日语注音';}
+  if(furiganaSegments){furiganaSegments=null;$('rubyResult').classList.add('hidden');$('furiganaExportButton').classList.add('hidden');furiganaVisible=false;$('furiganaButton').innerHTML='<span>あ</span> 日语注音';}
   $('furiganaButton').classList.toggle('hidden',!/[\u3040-\u30ff]/.test($('resultText').value));
 });
 $('furiganaButton').addEventListener('click',createFurigana);
+$('furiganaExportButton').addEventListener('click',()=>{
+  if(!furiganaSegments)return;
+  const body=furiganaSegments.map(({text,reading})=>reading?`<ruby>${escapeHtml(text)}<rt>${escapeHtml(reading)}</rt></ruby>`:escapeHtml(text)).join('');
+  const html=`<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>拾图 · 日语注音</title><style>body{max-width:900px;margin:32px auto;padding:0 24px;color:#111;font:18px/2.5 "Noto Sans JP","Yu Gothic",sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}ruby{ruby-position:over}rt{color:#aaa;font-size:.58em;line-height:1}@media print{body{max-width:none;margin:0;padding:0;color:#000}rt{color:#aaa}}</style></head><body>${body}</body></html>`;
+  const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));link.download=`${currentFile?.name.replace(/\.[^.]+$/,'')||'shitu'}-furigana.html`;link.click();URL.revokeObjectURL(link.href);
+});
 $('closeExplanation').addEventListener('click',()=>$('explanationPanel').classList.add('hidden'));
 $('explainButton').addEventListener('click',async()=>{
   if (!selectedSnippet) return;
@@ -381,7 +387,7 @@ $('recognizeButton').addEventListener('click', async () => {
   if (aiMode && (!$('apiEndpoint').value.trim() || !$('apiModel').value.trim())) { toast('请先填写 API 地址和模型名称'); $('apiSettings').classList.remove('hidden'); return; }
   if (aiMode && vaultRecord && !vaultUnlocked) { apiPanelOpen=true; setEngineMode(); toast('请先解锁已加密保存的 API Key'); return; }
   if (!aiMode && !window.Tesseract) { toast('OCR 引擎加载失败，请检查网络后刷新页面'); return; }
-  $('recognizeButton').disabled = true; $('resultPlaceholder').classList.add('hidden'); $('resultText').classList.add('hidden'); $('rubyResult').classList.add('hidden'); $('furiganaButton').classList.add('hidden'); furiganaSegments=null; furiganaVisible=false; $('progressArea').classList.remove('hidden');
+  $('recognizeButton').disabled = true; $('resultPlaceholder').classList.add('hidden'); $('resultText').classList.add('hidden'); $('rubyResult').classList.add('hidden'); $('furiganaButton').classList.add('hidden'); $('furiganaExportButton').classList.add('hidden'); furiganaSegments=null; furiganaVisible=false; $('progressArea').classList.remove('hidden');
   $('downloadNote').classList.remove('hidden'); $('progressBar').style.width = aiMode ? '24%' : '0%'; $('progressPercent').textContent = aiMode ? '…' : '0%'; $('statusText').textContent = aiMode ? '正在请求视觉 AI…' : '正在准备识别…'; setStatus('正在识别', 'processing');
   try {
     let text = '';
@@ -422,7 +428,7 @@ $('recognizeButton').addEventListener('click', async () => {
     setStatus('识别完成', 'done'); if (!$('resultText').value) toast('没有识别到文字，请检查图片或 API 设置');
     if(aiMode&&/[\u3040-\u30ff]/.test($('resultText').value))await createFurigana();
   } catch (error) {
-    console.error(error); $('progressArea').classList.add('hidden'); $('resultText').classList.remove('hidden'); $('rubyResult').classList.add('hidden'); $('furiganaButton').classList.add('hidden'); $('resultText').value = ''; $('resultPlaceholder').classList.add('hidden'); setStatus('识别失败'); toast(error.message || '识别失败，请检查网络、API 地址和跨域权限');
+    console.error(error); $('progressArea').classList.add('hidden'); $('resultText').classList.remove('hidden'); $('rubyResult').classList.add('hidden'); $('furiganaButton').classList.add('hidden'); $('furiganaExportButton').classList.add('hidden'); $('resultText').value = ''; $('resultPlaceholder').classList.add('hidden'); setStatus('识别失败'); toast(error.message || '识别失败，请检查网络、API 地址和跨域权限');
   } finally { $('recognizeButton').disabled = false; }
 });
 function fileAsDataUrl(file) { return new Promise((resolve,reject) => { const reader=new FileReader(); reader.onload=()=>resolve(reader.result); reader.onerror=()=>reject(new Error('无法读取图片文件')); reader.readAsDataURL(file); }); }
