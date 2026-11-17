@@ -10,14 +10,13 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="api.css">
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <a class="brand" href="#" aria-label="拾图首页"><span class="brand-mark">拾</span><span>拾图<span class="brand-dot">.</span></span></a>
-      <div class="top-note"><span class="privacy-dot"></span> 本地识别留在设备 · AI 模式发往所选 API</div>
+      <div class="top-note"><span class="privacy-dot"></span> 图片文字识别由你配置的 AI API 完成</div>
       <a class="github-link" href="https://github.com/hex3l/webocr" target="_blank" rel="noreferrer">灵感来自开源项目 <span>↗</span></a>
     </header>
 
@@ -31,7 +30,7 @@
       <section class="workspace" aria-label="图片文字提取工作区">
         <div class="toolbar">
           <div class="toolbar-left"><span class="step-number">01</span><span class="toolbar-title">添加图片</span><span class="toolbar-separator">/</span><span class="toolbar-subtitle">PNG · JPG · WEBP · BMP</span></div>
-          <div class="toolbar-right"><span id="engineTag" class="engine-tag"><span class="engine-dot"></span> 本地 OCR</span></div>
+          <div class="toolbar-right"><span id="engineTag" class="engine-tag"><span class="engine-dot"></span> 自定义 AI API</span></div>
         </div>
 
         <div class="columns">
@@ -51,14 +50,14 @@
               <div id="dropOverlay" class="drop-overlay hidden"><span>松开鼠标以添加图片</span></div>
             </div>
             <div id="imageMeta" class="image-meta hidden"><span id="fileName">—</span><span id="imageDimensions">—</span></div>
-            <div id="imagePrivacyNote" class="image-footer"><span class="footer-lock">▣</span> 本地 OCR：图片不会离开你的设备</div>
+            <div id="imagePrivacyNote" class="image-footer"><span class="footer-lock">↗</span> 图片会发送至你配置的 API 服务</div>
           </section>
 
           <section class="panel result-panel" aria-label="识别结果">
             <div class="panel-heading"><div><span class="section-index">B</span><span class="panel-title">识别结果</span></div><span id="wordCount" class="word-count">等待图片</span></div>
             <div class="settings-row">
-              <label id="modeLabel" class="language-label" for="engineSelect">识别方式</label>
-              <select id="engineSelect" aria-label="识别方式"><option value="local">本地 OCR</option><option value="ai">自定义 AI API</option></select>
+              <span class="language-label">识别方式</span><span class="engine-tag"><span class="engine-dot"></span>自定义 AI API</span>
+              <select id="engineSelect" class="hidden" aria-hidden="true" tabindex="-1"><option value="ai" selected>自定义 AI API</option></select>
               <span id="languageControls" class="language-controls">
               <label class="language-label" for="languageSelect">语言</label>
               <select id="languageSelect" aria-label="识别语言">
